@@ -52,7 +52,7 @@ export function Combo({
         aria-autocomplete="list"
         autoComplete="off"
         spellCheck={false}
-        placeholder="Type to search…"
+        placeholder="Search…"
         value={text ?? value}
         onFocus={(e) => {
           e.target.select();

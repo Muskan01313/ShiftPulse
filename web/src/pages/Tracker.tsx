@@ -12,18 +12,19 @@ const BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/
 
 type FieldKey = keyof TicketFields | "analystName" | "aht";
 // The tiles, in the order of the team's old tracker.
-const TILES: { key: FieldKey; label: string }[] = [
-  { key: "ticketNumber", label: "Ticket Number" },
-  { key: "stubName", label: "Stub Name" },
-  { key: "domain", label: "Domain" },
-  { key: "analystName", label: "Analyst" },
-  { key: "workType", label: "New/BAU" },
-  { key: "formComplexity", label: "Form Complexity" },
-  { key: "completedCount", label: "Completed Count" },
-  { key: "aht", label: "Total AHT" },
-  { key: "comments", label: "Comments" },
-  { key: "vstsNumber", label: "VSTS Number" },
-  { key: "status", label: "Status" },
+// Each tile's colour says what kind of field it is: ticket, people, category, numbers, notes, status.
+const TILES: { key: FieldKey; label: string; tone: string }[] = [
+  { key: "ticketNumber", label: "Ticket Number", tone: "blue" },
+  { key: "stubName", label: "Stub Name", tone: "blue" },
+  { key: "domain", label: "Domain", tone: "blue" },
+  { key: "analystName", label: "Analyst", tone: "violet" },
+  { key: "workType", label: "New/BAU", tone: "teal" },
+  { key: "formComplexity", label: "Form Complexity", tone: "teal" },
+  { key: "completedCount", label: "Completed Count", tone: "green" },
+  { key: "aht", label: "Total AHT", tone: "green" },
+  { key: "comments", label: "Comments", tone: "pink" },
+  { key: "vstsNumber", label: "VSTS Number", tone: "pink" },
+  { key: "status", label: "Status", tone: "amber" },
 ];
 
 const fieldsOf = (t: Ticket): TicketFields => ({
@@ -293,9 +294,10 @@ export function Tracker() {
       {error && <div className="error">{error}</div>}
       {shift && (
         <div className="shiftnote">
-          <span>Shift: <b>{niceDay(shift.shiftDate, { weekday: "long", day: "numeric", month: "long" })}</b>{team ? `, ${(team as Team).shift.start} to ${(team as Team).shift.end}` : ""}</span>
-          <span>Time this shift <b className="num">{clock(total)}</b></span>
-          <span>Open <b className="num">{open.length}</b> · Submitted <b className="num">{submitted.length}</b></span>
+          <span className="chip-stat c-blue"><small>Shift</small><b>{niceDay(shift.shiftDate, { weekday: "short", day: "numeric", month: "short" })}{team ? ` · ${(team as Team).shift.start}–${(team as Team).shift.end}` : ""}</b></span>
+          <span className="chip-stat c-green"><small>Time this shift</small><b className="num">{clock(total)}</b></span>
+          <span className="chip-stat c-amber"><small>Open</small><b className="num">{open.length}</b></span>
+          <span className="chip-stat c-violet"><small>Submitted</small><b className="num">{submitted.length}</b></span>
           <span className="spacer" />
           <span className="save" data-s={saveState}><span className="dot" />{saveState === "saving" ? "Saving…" : saveState === "error" ? "Not saved yet, retrying" : "All changes saved"}</span>
         </div>
@@ -329,7 +331,7 @@ export function Tracker() {
               )}
             </div>
             {TILES.map((t, i) => (
-              <label className="tile" key={t.key}>
+              <label className={`tile tone-${t.tone}`} key={t.key}>
                 <span className="tile-l"><b>{i + 2}</b>{t.label}</span>
                 {tile(t.key, t.label)}
               </label>
