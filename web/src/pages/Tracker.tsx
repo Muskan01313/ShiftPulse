@@ -245,10 +245,12 @@ export function Tracker() {
     };
     switch (key) {
       case "analystName":
-        return <div className="lockval">{current.analystName || user?.name}</div>;
+        // Open work shows your current name; submitted work keeps the name it was submitted under.
+        return <div className="lockval">{(editable ? user?.name : current.analystName) || current.analystName}</div>;
       case "stubName":
         return ro ? <div className="lockval">{current.stubName || "—"}</div> : (
           <Combo label={label} value={current.stubName} options={tenants.map((t) => t.tenantId)} onEnter={(el) => focusNext(el)}
+            emptyText={user?.role === "Admin" ? "No tenants yet. Upload the tenant CSV in Admin → Tenant list, then refresh this page." : "No tenants yet. Ask your admin to upload the tenant list."}
             onChange={(v) => {
               // A tenant offers only its own programs; one program is filled in for you.
               const progs = tenants.find((t) => t.tenantId === v)?.programs ?? [];
@@ -261,7 +263,8 @@ export function Tracker() {
       case "status": {
         const opts = key === "domain" ? domains : key === "workType" ? options.workTypes : key === "formComplexity" ? options.complexities : options.statuses;
         return ro ? <div className="lockval">{current[key] || "—"}</div> : (
-          <Combo label={label} value={current[key]} options={opts} onChange={(v) => edit({ [key]: v })} onEnter={(el) => focusNext(el)} />
+          <Combo label={label} value={current[key]} options={opts} onChange={(v) => edit({ [key]: v })} onEnter={(el) => focusNext(el)}
+            emptyText={key === "domain" ? "Pick a Stub Name first, or ask your admin to upload the tenant list." : "No choices yet. A manager can add them in Team → Dropdowns."} />
         );
       }
       case "completedCount":

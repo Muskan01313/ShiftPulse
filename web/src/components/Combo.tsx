@@ -7,6 +7,7 @@ export function Combo({
   options,
   onChange,
   onEnter,
+  emptyText = "No choices yet",
 }: {
   label: string;
   value: string;
@@ -14,6 +15,8 @@ export function Combo({
   onChange: (value: string) => void;
   /** Called after Enter, e.g. to move to the next field. */
   onEnter?: (input: HTMLInputElement) => void;
+  /** Shown when there are no choices at all (as opposed to none matching the search). */
+  emptyText?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState<string | null>(null);
@@ -93,7 +96,7 @@ export function Combo({
       />
       {open && (
         <div className="combo-list" role="listbox" ref={listRef}>
-          {items.length === 0 && <div className="combo-none">No match</div>}
+          {items.length === 0 && <div className="combo-none" style={{ whiteSpace: "normal", maxWidth: 260 }}>{options.length === 0 ? emptyText : "No match"}</div>}
           {items.map((o, i) => (
             <div
               key={o}

@@ -7,7 +7,7 @@ import type { Role, Team, User } from "../types";
 /** People, teams and the tenant list. Admins only. */
 export function Admin() {
   const toast = useToast();
-  const { user: me } = useAuth();
+  const { user: me, refresh } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [tab, setTab] = useState<"users" | "teams" | "tenants">("users");
@@ -31,7 +31,7 @@ export function Admin() {
           <button key={t} role="tab" className="tab" aria-selected={tab === t} onClick={() => setTab(t)}>{{ users: "People", teams: "Teams", tenants: "Tenant list" }[t]}</button>
         ))}
       </div>
-      {tab === "users" && <Users users={users} teams={teams} meId={me?.id ?? ""} reload={load} />}
+      {tab === "users" && <Users users={users} teams={teams} meId={me?.id ?? ""} reload={async () => { await load(); await refresh(); }} />}
       {tab === "users" && <BulkAdd teams={teams} reload={load} />}
       {tab === "teams" && <Teams teams={teams} users={users} reload={load} />}
       {tab === "tenants" && <Tenants />}
@@ -43,6 +43,8 @@ function Users({ users, teams, meId, reload }: { users: User[]; teams: Team[]; m
   const toast = useToast();
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "Member" as Role, teamId: teams[0]?.id ?? "" });
   const [resetFor, setResetFor] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [newName, setNewName] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
   async function patch(id: string, body: Record<string, unknown>, done?: string) {
@@ -73,7 +75,16 @@ function Users({ users, teams, meId, reload }: { users: User[]; teams: Team[]; m
           <tbody>
             {users.map((u) => (
               <tr key={u.id}>
-                <td><b>{u.name}</b></td>
+                <td>
+                  {renaming === u.id ? (
+                    <form style={{ display: "flex", gap: 4 }} onSubmit={(e) => { e.preventDefault(); void patch(u.id, { name: newName }, "Name changed."); setRenaming(null); }}>
+                      <input className="f" style={{ height: 28, width: 170 }} aria-label="New name" autoFocus value={newName} onChange={(e) => setNewName(e.target.value)} />
+                      <button className="btn sm primary" type="submit">Save</button>
+                    </form>
+                  ) : (
+                    <button className="btn sm" style={{ border: 0, padding: 0, background: "none", fontWeight: 700 }} title="Click to rename" onClick={() => { setRenaming(u.id); setNewName(u.name); }}>{u.name} ✎</button>
+                  )}
+                </td>
                 <td>{u.email}</td>
                 <td>
                   <select className="f" style={{ height: 30 }} aria-label={`Role of ${u.name}`} value={u.role} disabled={u.id === meId} onChange={(e) => void patch(u.id, { role: e.target.value })}>

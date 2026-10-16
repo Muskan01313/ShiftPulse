@@ -66,6 +66,8 @@ public static class TicketEndpoints
             if (error is not null) return error;
             if (TicketService.Validate(fields) is { } err) return Http.BadRequest(err);
             TicketService.Apply(t!, fields);
+            // An open ticket follows the analyst's current name (e.g. after an admin renames them).
+            t!.AnalystName = (await current.GetAsync())!.Name;
             await svc.Save(t!);
             return Results.Ok(TicketDto.From(t!));
         });
