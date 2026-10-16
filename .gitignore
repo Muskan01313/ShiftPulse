@@ -8,3 +8,4 @@ dist/
 .vs/
 .vscode/
 .DS_Store
+state.json
