@@ -1,0 +1,6 @@
+.git
+**/bin
+**/obj
+**/node_modules
+web/dist
+api/ShiftPulse.Tests

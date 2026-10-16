@@ -1,11 +1,12 @@
 # Render blueprint: New + > Blueprint > pick this repo. Fill in the secret values when Render asks.
+# One service serves both the website and the API at the same address.
 services:
   - type: web
-    name: shiftpulse-api
+    name: shiftpulse
     runtime: docker
     plan: free
-    dockerfilePath: ./api/Dockerfile
-    dockerContext: ./api
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /health
     envVars:
       - key: App__MongoUri
@@ -16,8 +17,6 @@ services:
         generateValue: true
       - key: App__JobKey
         generateValue: true
-      - key: App__CorsOrigins
-        sync: false # your web app URL, e.g. https://shiftpulse.vercel.app
       - key: App__BootstrapAdminEmail
         sync: false
       - key: App__BootstrapAdminPassword

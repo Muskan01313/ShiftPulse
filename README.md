@@ -34,18 +34,21 @@ React · .NET 8 · MongoDB
 ## How it fits together
 
 ```
- React (Vite)  ──HTTPS + JWT──▶  .NET 8 API  ──▶  MongoDB Atlas
-   web/                          api/              (free M0)
-   Vercel / Netlify              Render (Docker)
-                                    ▲
-                     GitHub Actions cron (close shifts, email reports)
+ Browser ──HTTPS──▶  ShiftPulse on Render (one Docker service)  ──▶  MongoDB Atlas
+                      ├─ the React website (built into wwwroot)        (free M0)
+                      └─ the .NET 8 API under /api
+                                   ▲
+                    GitHub Actions cron (close shifts, email reports)
 ```
+
+The website and the API share one address, so there's a single service to run and nothing else to host.
 
 ```
 api/ShiftPulse.Api      Minimal API: Auth, Tickets, Manage, Admin, Jobs endpoints
 api/ShiftPulse.Tests    xUnit tests for the shift and timer rules
 web/                    React + TypeScript: Tracker, Team, Admin pages
-render.yaml             One-click Render blueprint for the API
+Dockerfile              Builds the website and the API into one image
+render.yaml             One-click Render blueprint
 .github/workflows/      CI, and the scheduled shift jobs
 ```
 
@@ -74,24 +77,25 @@ Run the tests with `dotnet test ShiftPulse.sln`.
 
 ## Put it online for free
 
-**1. Database: MongoDB Atlas.** Create a free **M0** cluster at [mongodb.com/atlas](https://www.mongodb.com/atlas). Add a database user, allow access from anywhere (`0.0.0.0/0`, because Render's free IPs change), and copy the connection string.
+Two free accounts: **MongoDB Atlas** for the data and **Render** for the app.
 
-**2. API: Render.** At [render.com](https://render.com), choose **New → Blueprint** and pick this repository. Render reads `render.yaml` and asks for:
+**1. Database: MongoDB Atlas.** Create a free **M0** cluster at [mongodb.com/atlas](https://www.mongodb.com/atlas) (Mumbai is closest to India). Add a database user, allow access from anywhere (`0.0.0.0/0`, because Render's free IPs change), and copy the connection string.
+
+**2. App: Render.** At [render.com](https://render.com), sign in with GitHub, choose **New → Blueprint** and pick this repository. Render reads `render.yaml` and asks for:
 
 | Setting | Value |
 |---|---|
 | `App__MongoUri` | Atlas connection string |
-| `App__CorsOrigins` | your web app's URL (fill in after step 3) |
 | `App__BootstrapAdminEmail` / `App__BootstrapAdminPassword` | the first admin login, created on first start |
 | `App__Smtp__*` | optional: an SMTP account for report emails (e.g. Brevo's free tier) |
 
-`App__JwtSecret` and `App__JobKey` are generated for you.
+`App__JwtSecret` and `App__JobKey` are generated for you. When the deploy shows **Live**, open the `onrender.com` address Render gives you. That's ShiftPulse.
 
-**3. Web app: Vercel.** Import the repository at [vercel.com](https://vercel.com), set **Root Directory** to `web`, and add the environment variable `VITE_API_URL` = your Render URL. Then put the Vercel URL into Render's `App__CorsOrigins`.
+**3. Scheduled jobs: GitHub Actions.** In the repository's **Settings → Secrets and variables → Actions**, add `SHIFTPULSE_API_URL` (the Render address) and `SHIFTPULSE_JOB_KEY` (copy `App__JobKey` from Render's Environment page).
 
-**4. Scheduled jobs: GitHub Actions.** In the repository's **Settings → Secrets and variables → Actions**, add `SHIFTPULSE_API_URL` (the Render URL) and `SHIFTPULSE_JOB_KEY` (copy `App__JobKey` from Render).
+> **Free-tier note.** Render's free service sleeps after 15 minutes without visitors, and the first page load then takes 30–60 seconds. The job workflow wakes it before each run. If analysts find the wait annoying at the start of a shift, Render's $7/month plan keeps it awake.
 
-> **Free-tier note.** Render's free API sleeps after 15 minutes without visitors, and the first request then takes 30–60 seconds. The job workflow wakes it before each run. If analysts find the wait annoying at the start of a shift, Render's $7/month plan keeps it awake.
+> **Hosting the website elsewhere?** `web/` is a normal Vite app: build it with `VITE_API_URL` set to the API's address and set `App__CorsOrigins` on the API to the website's address.
 
 ## API at a glance
 

@@ -57,6 +57,9 @@ builder.Services.AddRateLimiter(o =>
 
 var app = builder.Build();
 
+// The built website (wwwroot, added by the Dockerfile) is served from the same address as the API.
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication();
@@ -70,6 +73,10 @@ ManageEndpoints.Map(app);
 AdminEndpoints.Map(app);
 JobEndpoints.Map(app);
 
+// Unknown /api paths are errors; any other path is a page of the website, which handles its own routes.
+app.Map("/api/{**rest}", () => Http.NotFound());
+app.MapFallbackToFile("index.html");
+
 await Seed.RunAsync(app.Services.GetRequiredService<Db>(), settings, app.Logger);
 
 app.Run();
@@ -81,7 +88,8 @@ static class Seed
     /// <summary>On a brand-new database: indexes, a first team and the first admin account.</summary>
     public static async Task RunAsync(Db db, AppSettings settings, ILogger log)
     {
-        await db.EnsureIndexesAsync();
+        try { await db.EnsureIndexesAsync(); }
+        catch (Exception e) { log.LogWarning(e, "Couldn't create the database indexes; the app works without them, just slower."); }
         if (await db.Users.CountDocumentsAsync(_ => true) > 0) return;
         if (string.IsNullOrWhiteSpace(settings.BootstrapAdminEmail) || (settings.BootstrapAdminPassword ?? "").Length < Passwords.MinLength)
         {
