@@ -190,12 +190,11 @@ export function Tracker() {
   function focusKey() {
     setTimeout(() => tilesRef.current?.querySelector<HTMLInputElement>("input.key")?.focus(), 0);
   }
+  // Moves straight away (not on the next tick), so a fast typist's next letter lands in the next tile.
   function focusNext(from: HTMLElement | null) {
-    setTimeout(() => {
-      const all = [...(tilesRef.current?.querySelectorAll<HTMLElement>(".tile .f") ?? [])];
-      const i = all.findIndex((n) => n === from || n.contains(from));
-      all[i + 1]?.focus();
-    }, 0);
+    const all = [...(tilesRef.current?.querySelectorAll<HTMLElement>(".tile .f") ?? [])];
+    const i = all.findIndex((n) => n === from || n.contains(from));
+    all[i + 1]?.focus();
   }
 
   async function setTime(text: string) {
@@ -249,7 +248,7 @@ export function Tracker() {
         return <div className="lockval">{current.analystName || user?.name}</div>;
       case "stubName":
         return ro ? <div className="lockval">{current.stubName || "—"}</div> : (
-          <Combo label={label} value={current.stubName} options={tenants.map((t) => t.tenantId)} onEnter={() => focusNext(document.activeElement as HTMLElement)}
+          <Combo label={label} value={current.stubName} options={tenants.map((t) => t.tenantId)} onEnter={(el) => focusNext(el)}
             onChange={(v) => {
               // A tenant offers only its own programs; one program is filled in for you.
               const progs = tenants.find((t) => t.tenantId === v)?.programs ?? [];
@@ -262,13 +261,13 @@ export function Tracker() {
       case "status": {
         const opts = key === "domain" ? domains : key === "workType" ? options.workTypes : key === "formComplexity" ? options.complexities : options.statuses;
         return ro ? <div className="lockval">{current[key] || "—"}</div> : (
-          <Combo label={label} value={current[key]} options={opts} onChange={(v) => edit({ [key]: v })} onEnter={() => focusNext(document.activeElement as HTMLElement)} />
+          <Combo label={label} value={current[key]} options={opts} onChange={(v) => edit({ [key]: v })} onEnter={(el) => focusNext(el)} />
         );
       }
       case "completedCount":
         return ro ? <div className="lockval">{current.completedCount ?? "—"}</div> : (
           <Combo label={label} value={current.completedCount ? String(current.completedCount) : ""} options={COUNTS}
-            onChange={(v) => edit({ completedCount: v ? Number(v) : null })} onEnter={() => focusNext(document.activeElement as HTMLElement)} />
+            onChange={(v) => edit({ completedCount: v ? Number(v) : null })} onEnter={(el) => focusNext(el)} />
         );
       case "aht":
         return running || ro ? <div className="lockval num">{clock(secs(current))}</div> : (

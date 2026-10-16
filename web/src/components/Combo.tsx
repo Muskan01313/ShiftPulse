@@ -13,7 +13,7 @@ export function Combo({
   options: string[];
   onChange: (value: string) => void;
   /** Called after Enter, e.g. to move to the next field. */
-  onEnter?: () => void;
+  onEnter?: (input: HTMLInputElement) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState<string | null>(null);
@@ -72,7 +72,7 @@ export function Combo({
           } else if (e.key === "Enter") {
             e.preventDefault();
             if (open && items[hi] !== undefined) pick(items[hi]);
-            onEnter?.();
+            onEnter?.(e.currentTarget);
           } else if (e.key === "Escape") {
             setText(null);
             setOpen(false);
