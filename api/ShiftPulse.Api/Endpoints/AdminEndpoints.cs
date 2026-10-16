@@ -10,6 +10,17 @@ public static class AdminEndpoints
 {
     public record NewUserRequest(string Name, string Email, string Password, string Role, string? TeamId);
     public record UpdateUserRequest(string? Name, string? Role, string? TeamId, bool? IsActive, string? NewPassword);
+    public record BulkPerson(string Name, string Email, string? Role);
+    public record BulkRequest(string? TeamId, List<BulkPerson> People);
+    public record BulkResult(string Name, string Email, string Role, string? Password, string Status);
+
+    /// <summary>A readable temporary password: no look-alike characters (0/O, 1/l/I).</summary>
+    public static string TempPassword()
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+        return new string(System.Security.Cryptography.RandomNumberGenerator.GetItems<char>(chars, 12));
+    }
+
     public record TeamRequest(string Name, List<string>? ManagerIds, ShiftSettings? Shift, List<string>? ReportEmails);
 
     public static IResult? CheckNewUser(string? name, string? email, string? password)
@@ -43,6 +54,33 @@ public static class AdminEndpoints
             try { await db.Users.InsertOneAsync(user); }
             catch (MongoWriteException e) when (e.WriteError.Category == ServerErrorCategory.DuplicateKey) { return Http.Error(409, "Someone already uses that email."); }
             return Results.Ok(UserDto.From(user));
+        });
+
+        // Adds many people at once, each with a temporary password shown only in this response.
+        g.MapPost("/users/bulk", async (BulkRequest req, Db db) =>
+        {
+            if (req.People is not { Count: > 0 and <= 500 }) return Http.BadRequest("Add between 1 and 500 people.");
+            var results = new List<BulkResult>();
+            foreach (var p in req.People)
+            {
+                var name = (p.Name ?? "").Trim();
+                var email = (p.Email ?? "").Trim().ToLowerInvariant();
+                var role = string.IsNullOrWhiteSpace(p.Role) ? Roles.Member : Roles.All.FirstOrDefault(r => r.Equals(p.Role.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (role is null) { results.Add(new(name, email, p.Role ?? "", null, "Skipped: role must be Member, Manager or Admin")); continue; }
+                var password = TempPassword();
+                if (CheckNewUser(name, email, password) is not null) { results.Add(new(name, email, role, null, "Skipped: needs a name and a valid email")); continue; }
+                var user = new User { Name = name, Email = email, PasswordHash = Passwords.Hash(password), Role = role, TeamId = string.IsNullOrEmpty(req.TeamId) ? null : req.TeamId };
+                try
+                {
+                    await db.Users.InsertOneAsync(user);
+                    results.Add(new(name, email, role, password, "Added"));
+                }
+                catch (MongoWriteException e) when (e.WriteError.Category == ServerErrorCategory.DuplicateKey)
+                {
+                    results.Add(new(name, email, role, null, "Skipped: someone already uses this email"));
+                }
+            }
+            return Results.Ok(results);
         });
 
         g.MapPatch("/users/{id}", async (string id, UpdateUserRequest req, CurrentUser current, Db db) =>

@@ -32,6 +32,7 @@ export function Admin() {
         ))}
       </div>
       {tab === "users" && <Users users={users} teams={teams} meId={me?.id ?? ""} reload={load} />}
+      {tab === "users" && <BulkAdd teams={teams} reload={load} />}
       {tab === "teams" && <Teams teams={teams} users={users} reload={load} />}
       {tab === "tenants" && <Tenants />}
     </main>
@@ -216,6 +217,92 @@ function Tenants() {
         {busy && <span className="hint" style={{ margin: 0 }}>Importing…</span>}
       </div>
       {result && <p style={{ marginBottom: 0 }}>{result}</p>}
+    </div>
+  );
+}
+
+interface BulkResult {
+  name: string;
+  email: string;
+  role: string;
+  password: string | null;
+  status: string;
+}
+
+/** Paste a list (one person per line: name, email, role) to add everyone at once. */
+function BulkAdd({ teams, reload }: { teams: Team[]; reload: () => Promise<void> }) {
+  const toast = useToast();
+  const [text, setText] = useState("");
+  const [teamId, setTeamId] = useState("");
+  const [results, setResults] = useState<BulkResult[] | null>(null);
+  const team = teamId || teams[0]?.id || "";
+
+  const people = text
+    .split("\n")
+    .map((l) => l.split(/\t|,/).map((x) => x.trim()))
+    .filter((p) => p[0])
+    .map(([name, email, role]) => ({ name, email: email ?? "", role: role || "Member" }));
+
+  async function add() {
+    try {
+      const r = await api<BulkResult[]>("/api/admin/users/bulk", { method: "POST", json: { teamId: team, people } });
+      setResults(r);
+      setText("");
+      await reload();
+      toast(`Added ${r.filter((x) => x.password).length} of ${r.length}.`);
+    } catch (e) {
+      toast((e as Error).message);
+    }
+  }
+  async function copy() {
+    const lines = ["Name\tEmail\tRole\tTemporary password", ...(results ?? []).filter((r) => r.password).map((r) => [r.name, r.email, r.role, r.password].join("\t"))];
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      toast("Logins copied. Paste them into a sheet, then send each person theirs privately.");
+    } catch {
+      toast("Your browser blocked copying.");
+    }
+  }
+
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <h3 style={{ fontSize: 15 }}>Add many people at once</h3>
+      <p className="hint" style={{ fontSize: 13 }}>
+        One person per line: <b>name, email, role</b>. Role is Member (analyst) if you leave it out. You can also paste three columns straight from a spreadsheet. Everyone gets a temporary password, shown once below.
+      </p>
+      <textarea className="f" rows={8} style={{ marginTop: 10, fontFamily: "var(--font-num)", fontSize: 13 }} aria-label="People to add"
+        placeholder={"Aayushi Patel, aayushi.patel@exxat.com\nAnushka Bisht, anushka.bisht@exxat.com\nHimanshu Mistry, himanshu.mistry@exxat.com, Manager"}
+        value={text} onChange={(e) => setText(e.target.value)} />
+      <div className="toolbar">
+        <label className="field" style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>Team
+          <select className="f" style={{ width: "auto" }} value={team} onChange={(e) => setTeamId(e.target.value)}>
+            {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+        </label>
+        <button className="btn primary" disabled={!people.length} onClick={() => void add()}>Add {people.length || ""} {people.length === 1 ? "person" : "people"}</button>
+      </div>
+      {results && (
+        <>
+          <div className="sheet">
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Temporary password</th><th>Result</th></tr></thead>
+              <tbody>
+                {results.map((r, i) => (
+                  <tr key={i}>
+                    <td><b>{r.name}</b></td><td>{r.email}</td><td>{r.role}</td>
+                    <td className="num">{r.password ?? "—"}</td>
+                    <td>{r.password ? <span className="pill ok">Added</span> : <span className="pill warn">{r.status}</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="toolbar">
+            <button className="btn" onClick={() => void copy()}>Copy logins</button>
+            <span className="hint" style={{ margin: 0 }}>These passwords aren't shown again. Copy them now; you can reset anyone's password later.</span>
+          </div>
+        </>
+      )}
     </div>
   );
 }
