@@ -28,6 +28,14 @@ jobs:
             *)              echo "job=${{ inputs.job }}" >> "$GITHUB_OUTPUT" ;;
           esac
       - name: Wake the API (free servers sleep)
-        run: curl -fsS --retry 6 --retry-delay 15 --retry-all-errors "${{ secrets.SHIFTPULSE_API_URL }}/health"
+        env:
+          API_URL: ${{ secrets.SHIFTPULSE_API_URL }}
+        run: |
+          curl -fsS --retry 6 --retry-delay 15 --retry-all-errors "$API_URL/health"
       - name: Run ${{ steps.pick.outputs.job }}
-        run: curl -fsS -X POST -H "X-Job-Key: ${{ secrets.SHIFTPULSE_JOB_KEY }}" "${{ secrets.SHIFTPULSE_API_URL }}/api/jobs/${{ steps.pick.outputs.job }}"
+        env:
+          API_URL: ${{ secrets.SHIFTPULSE_API_URL }}
+          JOB_KEY: ${{ secrets.SHIFTPULSE_JOB_KEY }}
+          JOB: ${{ steps.pick.outputs.job }}
+        run: |
+          curl -fsS -X POST -H "X-Job-Key: $JOB_KEY" "$API_URL/api/jobs/$JOB"
