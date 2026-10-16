@@ -4,8 +4,8 @@ services:
     name: shiftpulse-api
     runtime: docker
     plan: free
-    rootDir: api
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: ./api
     healthCheckPath: /health
     envVars:
       - key: App__MongoUri
