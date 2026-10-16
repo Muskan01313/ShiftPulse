@@ -1,0 +1,33 @@
+# Closes finished shifts and emails the reports. Needs two repository secrets:
+#   SHIFTPULSE_API_URL  e.g. https://shiftpulse-api.onrender.com
+#   SHIFTPULSE_JOB_KEY  the App__JobKey value from Render
+# Times are UTC: 19:00 UTC = 00:30 IST, 22:35 UTC = 04:05 IST.
+name: Shift jobs
+on:
+  schedule:
+    - cron: "0 19 * * 1-5"   # daily report after the Mon-Fri shift
+    - cron: "5 19 * * 5"     # weekly report after Friday's shift
+    - cron: "35 22 * * *"    # lock the finished shift
+  workflow_dispatch:
+    inputs:
+      job:
+        description: close-shifts, daily-report or weekly-report
+        default: close-shifts
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pick the job
+        id: pick
+        run: |
+          case "${{ github.event.schedule }}" in
+            "0 19 * * 1-5") echo "job=daily-report" >> "$GITHUB_OUTPUT" ;;
+            "5 19 * * 5")   echo "job=weekly-report" >> "$GITHUB_OUTPUT" ;;
+            "35 22 * * *")  echo "job=close-shifts" >> "$GITHUB_OUTPUT" ;;
+            *)              echo "job=${{ inputs.job }}" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - name: Wake the API (free servers sleep)
+        run: curl -fsS --retry 6 --retry-delay 15 --retry-all-errors "${{ secrets.SHIFTPULSE_API_URL }}/health"
+      - name: Run ${{ steps.pick.outputs.job }}
+        run: curl -fsS -X POST -H "X-Job-Key: ${{ secrets.SHIFTPULSE_JOB_KEY }}" "${{ secrets.SHIFTPULSE_API_URL }}/api/jobs/${{ steps.pick.outputs.job }}"

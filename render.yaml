@@ -1,0 +1,34 @@
+# Render blueprint: New + > Blueprint > pick this repo. Fill in the secret values when Render asks.
+services:
+  - type: web
+    name: shiftpulse-api
+    runtime: docker
+    plan: free
+    rootDir: api
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: App__MongoUri
+        sync: false # your MongoDB Atlas connection string
+      - key: App__MongoDatabase
+        value: shiftpulse
+      - key: App__JwtSecret
+        generateValue: true
+      - key: App__JobKey
+        generateValue: true
+      - key: App__CorsOrigins
+        sync: false # your web app URL, e.g. https://shiftpulse.vercel.app
+      - key: App__BootstrapAdminEmail
+        sync: false
+      - key: App__BootstrapAdminPassword
+        sync: false
+      - key: App__BootstrapAdminName
+        value: Admin
+      - key: App__Smtp__Host
+        sync: false # optional, for report emails, e.g. smtp-relay.brevo.com
+      - key: App__Smtp__User
+        sync: false
+      - key: App__Smtp__Password
+        sync: false
+      - key: App__Smtp__From
+        sync: false
