@@ -40,6 +40,21 @@ public static class AdminEndpoints
         return null;
     }
 
+    /// <summary>
+    /// Keeps a team's manager list in step with People: a Manager manages the team they belong to,
+    /// and stops managing it when they move team or lose the Manager role.
+    /// </summary>
+    static async Task SyncManagerAsync(Db db, User user, string? previousTeamId)
+    {
+        var u = Builders<Team>.Update;
+        if (user.Role == Roles.Member)
+            await db.Teams.UpdateManyAsync(t => t.ManagerIds.Contains(user.Id), u.Pull(t => t.ManagerIds, user.Id));
+        else if (user.Role == Roles.Manager && previousTeamId is not null && previousTeamId != user.TeamId)
+            await db.Teams.UpdateOneAsync(t => t.Id == previousTeamId, u.Pull(t => t.ManagerIds, user.Id));
+        if (user.Role == Roles.Manager && user.TeamId is not null)
+            await db.Teams.UpdateOneAsync(t => t.Id == user.TeamId, u.AddToSet(t => t.ManagerIds, user.Id));
+    }
+
     public static void Map(WebApplication app)
     {
         var g = app.MapGroup("/api/admin").RequireAuthorization("Admin");
@@ -53,6 +68,7 @@ public static class AdminEndpoints
             var user = new User { Name = req.Name.Trim(), Email = req.Email.Trim().ToLowerInvariant(), PasswordHash = Passwords.Hash(req.Password), Role = req.Role, TeamId = string.IsNullOrEmpty(req.TeamId) ? null : req.TeamId };
             try { await db.Users.InsertOneAsync(user); }
             catch (MongoWriteException e) when (e.WriteError.Category == ServerErrorCategory.DuplicateKey) { return Http.Error(409, "Someone already uses that email."); }
+            await SyncManagerAsync(db, user, null);
             return Results.Ok(UserDto.From(user));
         });
 
@@ -73,6 +89,7 @@ public static class AdminEndpoints
                 try
                 {
                     await db.Users.InsertOneAsync(user);
+                    await SyncManagerAsync(db, user, null);
                     results.Add(new(name, email, role, password, "Added"));
                 }
                 catch (MongoWriteException e) when (e.WriteError.Category == ServerErrorCategory.DuplicateKey)
@@ -92,12 +109,14 @@ public static class AdminEndpoints
             if (me!.Id == id && (req.IsActive == false || (req.Role is not null && req.Role != Roles.Admin)))
                 return Http.BadRequest("You can't remove your own admin access.");
             if (req.NewPassword is not null && req.NewPassword.Length < Passwords.MinLength) return Http.BadRequest($"The password needs at least {Passwords.MinLength} characters.");
+            var previousTeamId = user.TeamId;
             if (!string.IsNullOrWhiteSpace(req.Name)) user.Name = req.Name.Trim();
             if (req.Role is not null) user.Role = req.Role;
             if (req.TeamId is not null) user.TeamId = req.TeamId == "" ? null : req.TeamId;
             if (req.IsActive is { } a) user.IsActive = a;
             if (req.NewPassword is not null) user.PasswordHash = Passwords.Hash(req.NewPassword);
             await db.Users.ReplaceOneAsync(u => u.Id == id, user);
+            await SyncManagerAsync(db, user, previousTeamId);
             return Results.Ok(UserDto.From(user));
         });
 
