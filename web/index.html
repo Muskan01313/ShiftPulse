@@ -9,8 +9,28 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" />
     <title>ShiftPulse</title>
+    <script>
+      // Pick the saved palette before anything paints, so the splash and the app open in it.
+      try {
+        var t = localStorage.getItem("shiftpulse-theme");
+        if (t === "plum" || t === "lotus" || t === "gold") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+    <style>
+      /* The Exxat splash: shown on every open or reload, then faded out by main.tsx. */
+      #splash { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: #16022b; transition: opacity .7s ease, visibility .7s; }
+      [data-theme="lotus"] #splash { background: #061f17; }
+      [data-theme="gold"] #splash { background: #0b1020; }
+      #splash span { font: 700 clamp(44px, 9vw, 96px)/1 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Arial, sans-serif; letter-spacing: -0.02em; background: linear-gradient(135deg, #fdb095, #e5958e); -webkit-background-clip: text; background-clip: text; color: transparent; animation: splash-in .8s ease both; }
+      [data-theme="lotus"] #splash span { background-image: linear-gradient(135deg, #f7f4d5, #d3968c); }
+      [data-theme="gold"] #splash span { background-image: linear-gradient(135deg, #f6c868, #e09a2a); }
+      #splash.gone { opacity: 0; visibility: hidden; }
+      @keyframes splash-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) { #splash, #splash span { transition-duration: .2s; animation: none; } }
+    </style>
   </head>
   <body>
+    <div id="splash" aria-hidden="true"><span>Exxat</span></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
