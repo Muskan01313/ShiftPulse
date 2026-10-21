@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../auth";
+import { Logo, ThemePicker } from "../theme";
 
 export function Login() {
   const { login } = useAuth();
@@ -24,7 +25,7 @@ export function Login() {
   return (
     <div className="login">
       <form className="card" onSubmit={submit}>
-        <img src="/favicon.svg" alt="" width={40} height={40} />
+        <Logo size={40} />
         <h1>Sign in to ShiftPulse</h1>
         <p>Track your tickets and time for the shift.</p>
         <label className="field">
@@ -40,6 +41,7 @@ export function Login() {
           {busy ? "Signing in…" : "Sign in"}
         </button>
         <p className="hint">Forgot your password? Ask your manager or admin to reset it.</p>
+        <ThemePicker />
       </form>
     </div>
   );

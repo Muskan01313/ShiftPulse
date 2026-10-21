@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../auth";
+import { Logo, ThemePicker } from "../theme";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -65,7 +66,7 @@ export function TopBar() {
       <div className="wrap">
         <div className="bar-left">
           <NavLink to="/" className="brand">
-            <img src="/favicon.svg" alt="" /> ShiftPulse
+            <Logo /> ShiftPulse
           </NavLink>
           <nav className="nav">
             <NavLink to="/" end>
@@ -77,6 +78,7 @@ export function TopBar() {
         </div>
         <ShiftClock />
         <div className="bar-right">
+          <ThemePicker />
           <span className="who">{user.name}</span>
           {user.role !== "Member" && <span className="role">{user.role}</span>}
           <button className="btn sm" onClick={logout}>
