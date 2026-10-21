@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../auth";
-import { Logo, ThemePicker } from "../theme";
+import { Logo } from "../theme";
 
 export function Login() {
   const { login } = useAuth();
@@ -41,7 +41,6 @@ export function Login() {
           {busy ? "Signing in…" : "Sign in"}
         </button>
         <p className="hint">Forgot your password? Ask your manager or admin to reset it.</p>
-        <ThemePicker />
       </form>
     </div>
   );

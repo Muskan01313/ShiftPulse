@@ -4,7 +4,7 @@
   "description": "Time tracking for shift teams",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#210440",
-  "theme_color": "#210440",
+  "background_color": "#fdf3ee",
+  "theme_color": "#fdf3ee",
   "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
 }
