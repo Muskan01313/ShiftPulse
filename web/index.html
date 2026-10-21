@@ -18,12 +18,12 @@
     </script>
     <style>
       /* The Exxat splash: shown on every open or reload, then faded out by main.tsx. */
-      #splash { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: #16022b; transition: opacity .7s ease, visibility .7s; }
-      [data-theme="lotus"] #splash { background: #061f17; }
-      [data-theme="gold"] #splash { background: #0b1020; }
-      #splash span { font: 700 clamp(44px, 9vw, 96px)/1 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Arial, sans-serif; letter-spacing: -0.02em; background: linear-gradient(135deg, #fdb095, #e5958e); -webkit-background-clip: text; background-clip: text; color: transparent; animation: splash-in .8s ease both; }
-      [data-theme="lotus"] #splash span { background-image: linear-gradient(135deg, #f7f4d5, #d3968c); }
-      [data-theme="gold"] #splash span { background-image: linear-gradient(135deg, #f6c868, #e09a2a); }
+      #splash { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: radial-gradient(900px 500px at 50% 45%, #ffffff 0%, #fff1ea 55%, #fde3d8 100%); transition: opacity .7s ease, visibility .7s; }
+      [data-theme="lotus"] #splash { background: radial-gradient(900px 500px at 50% 45%, #fffdf0 0%, #f7f4d5 55%, #e9eccd 100%); }
+      [data-theme="gold"] #splash { background: radial-gradient(900px 500px at 50% 45%, #ffffff 0%, #fdf6e7 55%, #f8e9c8 100%); }
+      #splash span { font: 700 clamp(72px, 15vw, 168px)/1.1 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Arial, sans-serif; letter-spacing: -0.02em; background: linear-gradient(135deg, #210440, #a0446e 60%, #e5958e); -webkit-background-clip: text; background-clip: text; color: transparent; animation: splash-in .8s ease both; }
+      [data-theme="lotus"] #splash span { background-image: linear-gradient(135deg, #0a3323, #105666 55%, #b9786e); }
+      [data-theme="gold"] #splash span { background-image: linear-gradient(135deg, #0b1020, #34477e 50%, #c98a1e); }
       #splash.gone { opacity: 0; visibility: hidden; }
       @keyframes splash-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
       @media (prefers-reduced-motion: reduce) { #splash, #splash span { transition-duration: .2s; animation: none; } }
